@@ -57,8 +57,6 @@ async function run() {
       res.send(result)
     });
 
-   
-
     app.post("/blogposts", async (req, res) => {
       const newItem = req.body;
       console.log(newItem);
@@ -66,6 +64,22 @@ async function run() {
       res.send(result)
     })
 
+    app.put("/updateChanges/:id", async (req, res) => {
+      console.log(req.params.id);
+      const query = { _id: new ObjectId(req.params.id)};
+      const options = { upsert: true };
+      const data = {
+        $set: {
+          title: req.body.title,
+          image_url: req.body.image_url,
+          category: req.body.category,
+          short_description: req.body.short_description,
+          long_description: req.body.long_description,
+        },
+      };
+      const result = await blogCollection.updateOne(query, data, options);
+      res.send(result);
+    })
 
     //for filter get data
     // app.get('/filter-blog', async (req, res) => {
