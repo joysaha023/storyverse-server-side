@@ -64,6 +64,14 @@ async function run() {
       res.send(result)
     })
 
+    app.delete("/delete/:id", async (req, res) => {
+      const result = await blogCollection.deleteOne({
+        _id: new ObjectId(req.params.id),
+      });
+      console.log(result)
+      res.send(result)
+    })
+
     app.put("/updateChanges/:id", async (req, res) => {
       console.log(req.params.id);
       const query = { _id: new ObjectId(req.params.id)};
