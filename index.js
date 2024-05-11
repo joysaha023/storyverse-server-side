@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
@@ -35,15 +35,31 @@ async function run() {
         res.send(result);
     });
 
-    //for filter get data
-    app.get('/filter-blog', async (req, res) => {
-      const filter = req.query.filter
-      console.log(filter)
-      let query = {}
-      if(filter) query = { category: filter}
-      const result = await blogCollection.find(query).toArray()
+    app.get("/blogdetails/:id", async (req, res) => {
+      console.log(req.params.id);
+      const result = await blogCollection.findOne({
+        _id: new ObjectId(req.params.id),
+      });
+      res.send(result)
+    });
+
+    app.post("/blogposts", async (req, res) => {
+      const newItem = req.body;
+      console.log(newItem);
+      const result = await blogCollection.insertOne(newItem);
       res.send(result)
     })
+
+
+    //for filter get data
+    // app.get('/filter-blog', async (req, res) => {
+    //   const filter = req.query.filter
+    //   console.log(filter)
+    //   let query = {}
+    //   if(filter) query = { category: filter}
+    //   const result = await blogCollection.find(query).toArray()
+    //   res.send(result)
+    // })
 
 
 
