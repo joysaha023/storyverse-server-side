@@ -35,6 +35,16 @@ async function run() {
         res.send(result);
     });
 
+    //for filter get data
+    app.get('/filter-blog', async (req, res) => {
+      const filter = req.query.filter
+      console.log(filter)
+      let query = {}
+      if(filter) query = { category: filter}
+      const result = await blogCollection.find(query).toArray()
+      res.send(result)
+    })
+
 
 
     // Send a ping to confirm a successful connection
