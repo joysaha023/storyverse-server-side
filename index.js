@@ -1,10 +1,16 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
-
+//middleware
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
+app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.ADMIN_DB}:${process.env.ADMIN_PASS}@cluster0.jvkz9mr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
