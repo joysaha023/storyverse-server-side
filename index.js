@@ -30,6 +30,7 @@ async function run() {
     const blogCollection = client.db("blogWebDB").collection("blogPosts");
     const directorCollection = client.db("blogWebDB").collection("directorDB")
     const movieCollection = client.db("blogWebDB").collection("movieDB")
+    const reviewCollection = client.db("blogWebDB").collection("reviewDB")
 
     // get blog data
     app.get("/blogposts", async (req, res) => {
@@ -145,6 +146,20 @@ async function run() {
       const result = await movieCollection.find({ director: req.params.category}).toArray();
       res.send(result)
     });
+
+    //get review data
+    app.get("/review", async (req, res) => {
+      const cursor = reviewCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+     });
+
+     app.post("/writereview", async (req, res) => {
+      const newItem = req.body;
+      console.log(newItem);
+      const result = await reviewCollection.insertOne(newItem);
+      res.send(result)
+    })
 
 
     // Send a ping to confirm a successful connection
