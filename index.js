@@ -89,16 +89,33 @@ async function run() {
       res.send(result);
     })
 
-    //for filter get data
+   // for filter get data
     // app.get('/filter-blog', async (req, res) => {
     //   const filter = req.query.filter
     //   console.log(filter)
     //   let query = {}
-    //   if(filter) query = { category: filter}
-    //   const result = await blogCollection.find(query).toArray()
-    //   res.send(result)
+    //   console.log(query)
+    //   // if(filter) query = { category: filter}
+    //   const result = await blogCollection.find().toArray()
+    //   let filterdArr;
+    //     filterdArr = result.filter( (item) => 
+    //       item.category== filter
+    //     ) 
+    //   // console.log(result)
+    //   console.log(filterdArr)
+    //   res.send(filterdArr)
     // })
 
+    app.get('/filter-blog', async (req, res) => {
+      const filter = req.query.filter
+      const search = req.query.search
+      let query = {
+        title: { $regex: search, $options: 'i'},
+      }
+      if (filter) query.category = filter
+      const result = await blogCollection.find(query).toArray()
+      res.send(result)
+    })
 
 
     // Send a ping to confirm a successful connection
