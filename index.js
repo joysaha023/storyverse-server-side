@@ -28,6 +28,8 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const blogCollection = client.db("blogWebDB").collection("blogPosts");
+    const directorCollection = client.db("blogWebDB").collection("directorDB")
+    const movieCollection = client.db("blogWebDB").collection("movieDB")
 
     // get blog data
     app.get("/blogposts", async (req, res) => {
@@ -130,6 +132,19 @@ async function run() {
       const topPost = sortedDesc.slice(0, 10);
       res.json(topPost)
     })
+
+    //Director Data
+    app.get("/director", async (req, res) => {
+      const cursor = directorCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+     });
+
+     app.get("/moviedb/:category", async(req, res) => {
+      console.log(req.params.category);
+      const result = await movieCollection.find({ director: req.params.category}).toArray();
+      res.send(result)
+    });
 
 
     // Send a ping to confirm a successful connection
