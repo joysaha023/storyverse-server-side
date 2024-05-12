@@ -29,6 +29,7 @@ async function run() {
     await client.connect();
     const blogCollection = client.db("blogWebDB").collection("blogPosts");
 
+    // get blog data
     app.get("/blogposts", async (req, res) => {
         const cursor = blogCollection.find();
         const result = await cursor.toArray();
@@ -90,6 +91,7 @@ async function run() {
     })
 
    // for filter get data
+
     // app.get('/filter-blog', async (req, res) => {
     //   const filter = req.query.filter
     //   console.log(filter)
@@ -115,6 +117,18 @@ async function run() {
       if (filter) query.category = filter
       const result = await blogCollection.find(query).toArray()
       res.send(result)
+    })
+
+    // get featured data
+    app.get('/featuredblog', async (req, res) => {
+      const description = await blogCollection.find().toArray();
+      const sortedDesc = description.sort((a, b) => {
+        return b.long_description.split(" ").length - a.long_description.split(" ").length;
+      });
+      console.log(description)
+      console.log(sortedDesc)
+      const topPost = sortedDesc.slice(0, 10);
+      res.json(topPost)
     })
 
 
