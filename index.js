@@ -31,6 +31,7 @@ async function run() {
     const directorCollection = client.db("blogWebDB").collection("directorDB")
     const movieCollection = client.db("blogWebDB").collection("movieDB")
     const reviewCollection = client.db("blogWebDB").collection("reviewDB")
+    const commentCollection = client.db("blogWebDB").collection("commentDB")
 
     // get blog data
     app.get("/blogposts", async (req, res) => {
@@ -155,9 +156,24 @@ async function run() {
      });
 
      app.post("/writereview", async (req, res) => {
-      const newItem = req.body;
-      console.log(newItem);
-      const result = await reviewCollection.insertOne(newItem);
+      const reviewItem = req.body;
+      console.log(reviewItem);
+      const result = await reviewCollection.insertOne(reviewItem);
+      res.send(result)
+    })
+
+    //get comment data
+
+    app.get("/comments/:id", async(req, res) => {
+      console.log(req.params.id);
+      const result = await commentCollection.find({ blogid: req.params.id}).toArray();
+      res.send(result)
+    });
+
+    app.post("/commentpost", async (req, res) => {
+      const commentItem = req.body;
+      console.log(commentItem);
+      const result = await commentCollection.insertOne(commentItem);
       res.send(result)
     })
 
