@@ -32,6 +32,20 @@ async function run() {
     const movieCollection = client.db("blogWebDB").collection("movieDB")
     const reviewCollection = client.db("blogWebDB").collection("reviewDB")
     const commentCollection = client.db("blogWebDB").collection("commentDB")
+    const wishlistCollection = client.db("blogWebDB").collection("wishlistDB")
+
+
+    
+    //home route
+    app.get('/', (req, res) => {
+      res.status(200).send("home route")
+    })
+    //home route
+    app.get('/health', (req, res) => {
+      res.status(200).send("health is good")
+    })
+
+
 
     // get blog data
     app.get("/blogposts", async (req, res) => {
@@ -175,7 +189,29 @@ async function run() {
       console.log(commentItem);
       const result = await commentCollection.insertOne(commentItem);
       res.send(result)
+    });
+
+    //wishlist Data
+    app.get("/wishlist/:email", async(req, res) => {
+      console.log(req.params.email);
+      const result = await wishlistCollection.find({ useremail: req.params.email}).toArray();
+      res.send(result)
+    });
+
+    app.delete("/wishdelete/:id", async (req, res) => {
+      const result = await wishlistCollection.deleteOne({
+        _id: new ObjectId(req.params.id),
+      });
+      console.log(result)
+      res.send(result)
     })
+
+    app.post("/wishlistpost", async (req, res) => {
+      const wishItem = req.body;
+      console.log(wishItem);
+      const result = await wishlistCollection.insertOne(wishItem);
+      res.send(result)
+    });
 
 
     // Send a ping to confirm a successful connection
