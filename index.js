@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require("dotenv").config();
@@ -8,7 +10,8 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(cors({
   origin: ['http://localhost:5173'],
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200,
 }));
 app.use(express.json());
 
@@ -34,8 +37,6 @@ async function run() {
     const commentCollection = client.db("blogWebDB").collection("commentDB")
     const wishlistCollection = client.db("blogWebDB").collection("wishlistDB")
 
-
-    
     //home route
     app.get('/', (req, res) => {
       res.status(200).send("home route")
@@ -45,6 +46,14 @@ async function run() {
       res.status(200).send("health is good")
     })
 
+    //jwt generate
+    app.post('/jwt', async (req, res) => {
+      const user = req.body
+      const token = jwt.sign(user, process.env.ACCESSS_TOKEN_SECRET, {
+        expiresIn: '365d'
+      })
+      res.send({ token })
+    })
 
 
     // get blog data
