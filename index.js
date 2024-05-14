@@ -1,19 +1,42 @@
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser')
+const express = require("express");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const app = express();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
 //middleware
-app.use(cors({
-  origin: ['http://localhost:5173'],
-  credentials: true,
-  optionsSuccessStatus: 200,
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+    optionsSuccessStatus: 200,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
+
+// verify jwt middleware
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token;
+  if (!token) return res.status(401).send({ message: 'unauthorized access'})
+  if (token) {
+    jwt.verify(token, process.env.ACCESSS_TOKEN_SECRET, (err, decoded) => {
+      if (err) {
+        console.log(err);
+        return res.status(401).send({ message: 'unauthorized access'})
+      }
+      console.log(decoded);
+      req.user = decoded
+      next();
+    });
+  }
+  console.log(token);
+
+  
+};
 
 const uri = `mongodb+srv://${process.env.ADMIN_DB}:${process.env.ADMIN_PASS}@cluster0.jvkz9mr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -23,7 +46,7 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -31,44 +54,61 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const blogCollection = client.db("blogWebDB").collection("blogPosts");
-    const directorCollection = client.db("blogWebDB").collection("directorDB")
-    const movieCollection = client.db("blogWebDB").collection("movieDB")
-    const reviewCollection = client.db("blogWebDB").collection("reviewDB")
-    const commentCollection = client.db("blogWebDB").collection("commentDB")
-    const wishlistCollection = client.db("blogWebDB").collection("wishlistDB")
+    const directorCollection = client.db("blogWebDB").collection("directorDB");
+    const movieCollection = client.db("blogWebDB").collection("movieDB");
+    const reviewCollection = client.db("blogWebDB").collection("reviewDB");
+    const commentCollection = client.db("blogWebDB").collection("commentDB");
+    const wishlistCollection = client.db("blogWebDB").collection("wishlistDB");
 
     //home route
-    app.get('/', (req, res) => {
-      res.status(200).send("home route")
-    })
+    app.get("/", (req, res) => {
+      res.status(200).send("home route");
+    });
     //home route
-    app.get('/health', (req, res) => {
-      res.status(200).send("health is good")
-    })
+    app.get("/health", (req, res) => {
+      res.status(200).send("health is good");
+    });
 
     //jwt generate
-    app.post('/jwt', async (req, res) => {
-      const user = req.body
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
       const token = jwt.sign(user, process.env.ACCESSS_TOKEN_SECRET, {
-        expiresIn: '365d'
-      })
-      res.send({ token })
-    })
+        expiresIn: "365d",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
 
+    //Clear token on logout
+    app.get("/logout", (req, res) => {
+      res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          maxAge: 0,
+        })
+        .send({ success: true });
+    });
 
     // get blog data
     app.get("/blogposts", async (req, res) => {
-        const cursor = blogCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
+      const cursor = blogCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
     });
 
-    app.get("/blogdetails/:id", async (req, res) => {
+    app.get("/blogdetails/:id",   async (req, res) => {
       console.log(req.params.id);
       const result = await blogCollection.findOne({
         _id: new ObjectId(req.params.id),
       });
-      res.send(result)
+      res.send(result);
     });
 
     app.get("/updateblog/:id", async (req, res) => {
@@ -76,33 +116,40 @@ async function run() {
       const result = await blogCollection.findOne({
         _id: new ObjectId(req.params.id),
       });
-      res.send(result)
+      res.send(result);
     });
 
-    app.get("/myblog/:email", async(req, res) => {
+    app.get("/myblog/:email", verifyToken, async (req, res) => {
+      const tokenEmail = req.user.email
+      const email = req.params.email
+      if (tokenEmail !== email) {
+        return res.status(403).send({message: 'forbidden access'})
+      }
       console.log(req.params.email);
-      const result = await blogCollection.find({ email: req.params.email}).toArray();
-      res.send(result)
+      const result = await blogCollection
+        .find({ email: req.params.email })
+        .toArray();
+      res.send(result);
     });
 
     app.post("/blogposts", async (req, res) => {
       const newItem = req.body;
       console.log(newItem);
       const result = await blogCollection.insertOne(newItem);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     app.delete("/delete/:id", async (req, res) => {
       const result = await blogCollection.deleteOne({
         _id: new ObjectId(req.params.id),
       });
-      console.log(result)
-      res.send(result)
-    })
+      console.log(result);
+      res.send(result);
+    });
 
-    app.put("/updateChanges/:id", async (req, res) => {
+    app.put("/updateChanges/:id",  async (req, res) => {
       console.log(req.params.id);
-      const query = { _id: new ObjectId(req.params.id)};
+      const query = { _id: new ObjectId(req.params.id) };
       const options = { upsert: true };
       const data = {
         $set: {
@@ -115,9 +162,9 @@ async function run() {
       };
       const result = await blogCollection.updateOne(query, data, options);
       res.send(result);
-    })
+    });
 
-   // for filter get data
+    // for filter get data
 
     // app.get('/filter-blog', async (req, res) => {
     //   const filter = req.query.filter
@@ -127,48 +174,53 @@ async function run() {
     //   // if(filter) query = { category: filter}
     //   const result = await blogCollection.find().toArray()
     //   let filterdArr;
-    //     filterdArr = result.filter( (item) => 
+    //     filterdArr = result.filter( (item) =>
     //       item.category== filter
-    //     ) 
+    //     )
     //   // console.log(result)
     //   console.log(filterdArr)
     //   res.send(filterdArr)
     // })
 
-    app.get('/filter-blog', async (req, res) => {
-      const filter = req.query.filter
-      const search = req.query.search
+    app.get("/filter-blog", async (req, res) => {
+      const filter = req.query.filter;
+      const search = req.query.search;
       let query = {
-        title: { $regex: search, $options: 'i'},
-      }
-      if (filter) query.category = filter
-      const result = await blogCollection.find(query).toArray()
-      res.send(result)
-    })
+        title: { $regex: search, $options: "i" },
+      };
+      if (filter) query.category = filter;
+      const result = await blogCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // get featured data
-    app.get('/featuredblog', async (req, res) => {
+    app.get("/featuredblog", async (req, res) => {
       const description = await blogCollection.find().toArray();
       const sortedDesc = description.sort((a, b) => {
-        return b.long_description.split(" ").length - a.long_description.split(" ").length;
+        return (
+          b.long_description.split(" ").length -
+          a.long_description.split(" ").length
+        );
       });
-      console.log(description)
-      console.log(sortedDesc)
+      console.log(description);
+      console.log(sortedDesc);
       const topPost = sortedDesc.slice(0, 10);
-      res.json(topPost)
-    })
+      res.json(topPost);
+    });
 
     //Director Data
     app.get("/director", async (req, res) => {
       const cursor = directorCollection.find();
       const result = await cursor.toArray();
       res.send(result);
-     });
+    });
 
-     app.get("/moviedb/:category", async(req, res) => {
+    app.get("/moviedb/:category", async (req, res) => {
       console.log(req.params.category);
-      const result = await movieCollection.find({ director: req.params.category}).toArray();
-      res.send(result)
+      const result = await movieCollection
+        .find({ director: req.params.category })
+        .toArray();
+      res.send(result);
     });
 
     //get review data
@@ -176,56 +228,61 @@ async function run() {
       const cursor = reviewCollection.find();
       const result = await cursor.toArray();
       res.send(result);
-     });
+    });
 
-     app.post("/writereview", async (req, res) => {
+    app.post("/writereview",  async (req, res) => {
       const reviewItem = req.body;
       console.log(reviewItem);
       const result = await reviewCollection.insertOne(reviewItem);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     //get comment data
 
-    app.get("/comments/:id", async(req, res) => {
+    app.get("/comments/:id",  async (req, res) => {
       console.log(req.params.id);
-      const result = await commentCollection.find({ blogid: req.params.id}).toArray();
-      res.send(result)
+      const result = await commentCollection
+        .find({ blogid: req.params.id })
+        .toArray();
+      res.send(result);
     });
 
     app.post("/commentpost", async (req, res) => {
       const commentItem = req.body;
       console.log(commentItem);
       const result = await commentCollection.insertOne(commentItem);
-      res.send(result)
+      res.send(result);
     });
 
     //wishlist Data
-    app.get("/wishlist/:email", async(req, res) => {
+    app.get("/wishlist/:email", verifyToken, async (req, res) => {
       console.log(req.params.email);
-      const result = await wishlistCollection.find({ useremail: req.params.email}).toArray();
-      res.send(result)
+      const result = await wishlistCollection
+        .find({ useremail: req.params.email })
+        .toArray();
+      res.send(result);
     });
 
     app.delete("/wishdelete/:id", async (req, res) => {
       const result = await wishlistCollection.deleteOne({
         _id: new ObjectId(req.params.id),
       });
-      console.log(result)
-      res.send(result)
-    })
+      console.log(result);
+      res.send(result);
+    });
 
     app.post("/wishlistpost", async (req, res) => {
       const wishItem = req.body;
       console.log(wishItem);
       const result = await wishlistCollection.insertOne(wishItem);
-      res.send(result)
+      res.send(result);
     });
-
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -233,12 +290,10 @@ async function run() {
 }
 run().catch(console.dir);
 
-
-
-app.get('/', (req, res) => {
-    res.send('blogging website server is running')
-})
+app.get("/", (req, res) => {
+  res.send("blogging website server is running");
+});
 
 app.listen(port, () => {
-    console.log(`blogging website running on port ${port}`)
-})
+  console.log(`blogging website running on port ${port}`);
+});
