@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "https://storyverse-blogsite.web.app", "https://storyverse-blogsite.firebaseapp.com",],
     credentials: true,
     optionsSuccessStatus: 200,
   })
@@ -52,7 +52,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const blogCollection = client.db("blogWebDB").collection("blogPosts");
     const directorCollection = client.db("blogWebDB").collection("directorDB");
     const movieCollection = client.db("blogWebDB").collection("movieDB");
@@ -78,7 +78,7 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV === "production" ? true : false,
           sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
@@ -89,7 +89,7 @@ async function run() {
       res
         .clearCookie("token", {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV === "production" ? true : false,
           sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
           maxAge: 0,
         })
@@ -279,7 +279,7 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
