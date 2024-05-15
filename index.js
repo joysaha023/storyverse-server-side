@@ -78,7 +78,7 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production" ? true : false,
+          secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
@@ -86,11 +86,13 @@ async function run() {
 
     //Clear token on logout
     app.get("/logout", (req, res) => {
+      const user = req.body;
+      console.log = ('logging out', user)
       res
         .clearCookie("token", {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production" ? true : false,
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          secure: true,
+          sameSite: "none",
           maxAge: 0,
         })
         .send({ success: true });
@@ -111,7 +113,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/updateblog/:id", async (req, res) => {
+    app.get("/updateblog/:id",   async (req, res) => {
       console.log(req.params.id);
       const result = await blogCollection.findOne({
         _id: new ObjectId(req.params.id),
@@ -256,6 +258,11 @@ async function run() {
 
     //wishlist Data
     app.get("/wishlist/:email", verifyToken, async (req, res) => {
+      const tokenEmail = req.user.email
+      const email = req.params.email
+      if (tokenEmail !== email) {
+        return res.status(403).send({message: 'forbidden access'})
+      }
       console.log(req.params.email);
       const result = await wishlistCollection
         .find({ useremail: req.params.email })
