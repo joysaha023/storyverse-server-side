@@ -59,6 +59,8 @@ async function run() {
     const reviewCollection = client.db("blogWebDB").collection("reviewDB");
     const commentCollection = client.db("blogWebDB").collection("commentDB");
     const wishlistCollection = client.db("blogWebDB").collection("wishlistDB");
+    const communityCollection = client.db("blogWebDB").collection("communityDB");
+    const addReplyCollection = client.db("blogWebDB").collection("addReplyDB");
 
     //home route
     app.get("/", (req, res) => {
@@ -282,6 +284,36 @@ async function run() {
       const wishItem = req.body;
       console.log(wishItem);
       const result = await wishlistCollection.insertOne(wishItem);
+      res.send(result);
+    });
+
+    // Community data
+    
+    app.get("/community", async (req, res) => {
+      const cursor = communityCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/addReplay/:id",  async (req, res) => {
+      console.log(req.params.id);
+      const result = await addReplyCollection
+        .find({ blogid: req.params.id })
+        .toArray();
+      res.send(result);
+    });
+
+    app.post("/communitypost", async (req, res) => {
+      const communityItem = req.body;
+      console.log(communityItem);
+      const result = await communityCollection.insertOne(communityItem);
+      res.send(result);
+    });
+
+    app.post("/addReplyPost", async (req, res) => {
+      const communityComment = req.body;
+      console.log(communityComment);
+      const result = await addReplyCollection.insertOne(communityComment);
       res.send(result);
     });
 
